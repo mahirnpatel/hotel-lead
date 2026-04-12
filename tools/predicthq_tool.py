@@ -102,9 +102,11 @@ def _is_junk(event: dict) -> bool:
 
 def _is_b2b(event: dict) -> bool:
     labels = {l["label"] for l in event.get("phq_labels", [])}
-    b2b_count  = len(labels & B2B_LABELS)
-    junk_count = len(labels & EXCLUDE_LABELS)
-    return b2b_count > 0 and b2b_count >= junk_count
+    b2b_count     = len(labels & B2B_LABELS)
+    exclude_count = len(labels & EXCLUDE_LABELS)
+    if b2b_count == 0:
+        return False
+    return b2b_count >= exclude_count
 
 
 @function_tool
@@ -112,8 +114,8 @@ def search_events(
     city:       str,
     state:      str,
     categories: list[PredictHQCategory] = ["conferences", "expos"],
-    min_rank:   int = 30,
-    limit:      int = 25
+    min_rank:   int = 20,
+    limit:      int = 50
 ) -> dict:
     """
     Search for upcoming events in a US city using PredictHQ.
@@ -134,7 +136,7 @@ def search_events(
         "rank.gte":        min_rank,
         "limit":           limit,
         "sort":            "rank",
-        "phq_attendance.gte": 2000,
+        "phq_attendance.gte": 1000,
     }
 
     if city_place_id:
