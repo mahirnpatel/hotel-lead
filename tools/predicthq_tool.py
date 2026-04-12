@@ -1,6 +1,6 @@
 import requests
 from datetime import datetime, timezone, timedelta
-from typing import Literal, List
+from typing import Literal
 from agents import function_tool
 from config.settings import PREDICTHQ_API_KEY, DEFAULT_DAYS_FROM, DEFAULT_DAYS_WINDOW, DEFAULT_LIMIT, MIN_PREDICTHQ_RANK
 from config.settings import START_DATE, END_DATE
@@ -11,11 +11,51 @@ PredictHQCategory = Literal[
 ]
 
 JUNK_KEYWORDS = [
+    # consumer/hobby events
     "collectible", "collectibles", "trading card", "tcg", "pokemon",
     "hot wheels", "funko", "comic", "hobby", "streetwear",
     "gothic market", "dj retreat", "q&a", "swap meet",
-    "craft & gift", "flash tattoo", "furry", "frolicon"
+    "craft & gift", "flash tattoo", "furry", "frolicon",
+    # auto/vehicle consumer events
+    "auto show", "motor show", "car show", "bike tour", "motorcycle week",
+    "bike week", "air show", "airshow", "horse show", "rodeo",
+    # art/craft/fair events
+    "art fair", "art expo", "craft fair", "arts & crafts", "arts and crafts",
+    "county fair", "state fair",
+    # fan/pop culture events
+    "fan expo", "fan fusion", "powwow", "pow wow", "fleet week",
 ]
+
+B2B_LABELS = {
+    "science-and-technology",
+    "medical",
+    "management-and-consulting",
+    "legal-and-property-services",
+    "financial-services",
+    "construction-and-infrastructure",
+    "logistics-and-transportation",
+    "manufacturing-and-petroleum-products",
+    "mining-drilling-and-metalwork",
+    "hospitality-and-travel",
+    "automotive",
+    "textile",
+    "agriculture-forestry-and-fisheries",
+    "consumer-goods",
+    "design-and-furnishing",
+}
+
+EXCLUDE_LABELS = {
+    "lifestyle",
+    "art-and-cultural",
+    "literature-film-and-theater",
+    "festivals-and-outdoor-activities",
+    "music-and-dance",
+    "food-and-beverage",
+    "beauty-and-fashion",
+    "sports-and-gaming",
+    "religion-and-spirituality",
+    "education-and-careers",
+}
 
 
 def get_place_id(city: str, state: str) -> tuple[str, str]:
@@ -56,13 +96,24 @@ def get_place_id(city: str, state: str) -> tuple[str, str]:
     return city_place_id, state_place_id
 
 
+def _is_junk(event: dict) -> bool:
+    return any(kw in event["title"].lower() for kw in JUNK_KEYWORDS)
+
+
+def _is_b2b(event: dict) -> bool:
+    labels = {l["label"] for l in event.get("phq_labels", [])}
+    b2b_count  = len(labels & B2B_LABELS)
+    junk_count = len(labels & EXCLUDE_LABELS)
+    return b2b_count > 0 and b2b_count >= junk_count
+
+
 @function_tool
 def search_events(
-    city:          str,
-    state:         str,
-    categories:    list[PredictHQCategory] = ["conferences", "expos"],
-    min_rank:      int  = 30,
-    limit:         int  = 25
+    city:       str,
+    state:      str,
+    categories: list[PredictHQCategory] = ["conferences", "expos"],
+    min_rank:   int = 30,
+    limit:      int = 25
 ) -> dict:
     """
     Search for upcoming events in a US city using PredictHQ.
@@ -70,23 +121,20 @@ def search_events(
     City and state are always passed as runtime parameters, never hardcoded.
     """
 
-
     date_from = START_DATE or (datetime.now(timezone.utc) + timedelta(days=DEFAULT_DAYS_FROM)).strftime("%Y-%m-%d")
     date_to   = END_DATE   or (datetime.now(timezone.utc) + timedelta(days=DEFAULT_DAYS_FROM + DEFAULT_DAYS_WINDOW)).strftime("%Y-%m-%d")
 
     city_place_id, state_place_id = get_place_id(city, state)
 
     params = {
-        "country":    "US",
-        "active.gte": date_from,
-        "active.lte": date_to,
-        "category":   ",".join(categories),
-        "rank.gte":   min_rank,
-        "limit":      limit,
-        "sort":       "rank",
-        
-        "predicted_event_spend_industry.accommodation.gte": 50000,
-        "phq_attendance.gte": 200,
+        "country":         "US",
+        "active.gte":      date_from,
+        "active.lte":      date_to,
+        "category":        ",".join(categories),
+        "rank.gte":        min_rank,
+        "limit":           limit,
+        "sort":            "rank",
+        "phq_attendance.gte": 2000,
     }
 
     if city_place_id:
@@ -103,23 +151,18 @@ def search_events(
         timeout=15
     )
     data = response.json()
+    raw_results = data.get("results", [])
 
-    # ── Basic junk keyword filter ──────────────────────────────────
-    JUNK_KEYWORDS = [
-        "collectible", "collectibles", "trading card", "tcg", "pokemon",
-        "hot wheels", "funko", "comic", "hobby", "streetwear",
-        "gothic market", "dj retreat", "q&a", "swap meet",
-        "craft & gift", "flash tattoo", "furry", "frolicon"
-    ]
+    # Step 1 — junk keyword filter
+    after_keyword = [e for e in raw_results if not _is_junk(e)]
 
-    def is_junk(event: dict) -> bool:
-        return any(kw in event["title"].lower() for kw in JUNK_KEYWORDS)
+    # Step 2 — B2B label scoring filter
+    after_label = [e for e in after_keyword if _is_b2b(e)]
 
-    filtered = [e for e in data.get("results", []) if not is_junk(e)]
-
-    print(f"  Total from API:    {data.get('count', 0)}")
-    print(f"  Returned:          {len(data.get('results', []))}")
-    print(f"  After junk filter: {len(filtered)}")
+    print(f"  Total from API:       {data.get('count', 0)}")
+    print(f"  Returned:             {len(raw_results)}")
+    print(f"  After keyword filter: {len(after_keyword)}")
+    print(f"  After label filter:   {len(after_label)}")
 
     def get_venue(event: dict) -> str:
         for entity in event.get("entities", []):
@@ -143,28 +186,28 @@ def search_events(
 
     return {
         "total_found":     data.get("count", 0),
-        "pre_llm_dropped": len(data.get("results", [])) - len(filtered),
+        "pre_llm_dropped": len(raw_results) - len(after_label),
         "events": [
             {
-                "id":              e["id"],
-                "title":           e["title"],
-                "description":     e.get("description", ""),
-                "category":        e["category"],
-                "labels":          e.get("labels", []),
-                "phq_labels":      [l["label"] for l in e.get("phq_labels", [])],
-                "rank":            e["rank"],
-                "local_rank":      e.get("local_rank"),
-                "phq_attendance":  e.get("phq_attendance"),
+                "id":                    e["id"],
+                "title":                 e["title"],
+                "description":           e.get("description", ""),
+                "category":              e["category"],
+                "labels":                e.get("labels", []),
+                "phq_labels":            [l["label"] for l in e.get("phq_labels", [])],
+                "rank":                  e["rank"],
+                "local_rank":            e.get("local_rank"),
+                "phq_attendance":        e.get("phq_attendance"),
                 "predicted_event_spend": e.get("predicted_event_spend"),
                 "accommodation_spend":   e.get("predicted_event_spend_industries", {}).get("accommodation"),
-                "start":           e["start"],
-                "end":             e["end"],
-                "duration_days":   get_duration_days(e),
-                "venue_name":      get_venue(e),
-                "venue_address":   get_venue_address(e),
-                "city":            city,
-                "state":           state,
+                "start":                 e["start"],
+                "end":                   e["end"],
+                "duration_days":         get_duration_days(e),
+                "venue_name":            get_venue(e),
+                "venue_address":         get_venue_address(e),
+                "city":                  city,
+                "state":                 state,
             }
-            for e in filtered
+            for e in after_label
         ]
     }

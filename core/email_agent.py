@@ -81,6 +81,45 @@ def generate_email(enrichment: EventEnrichment, recipient_name: str, recipient_c
         clean = raw.replace("```json", "").replace("```", "").strip()
         return json.loads(clean)
 
+def refine_email(
+    original_subject: str,
+    original_body: str,
+    instruction: str,
+    event: EventEnrichment,
+    recipient_name: str,
+    company: str,
+) -> dict:
+    prompt = f"""You are an expert email copywriter. You have written a cold outreach email and the user wants you to refine it based on their instruction.
+
+Original Subject:
+{original_subject}
+
+Original Email Body (HTML):
+{original_body}
+
+User Instruction:
+{instruction}
+
+Context:
+- Recipient: {recipient_name} at {company}
+- Event: {event.event_name}
+- Hotel: {HOTEL_CONTEXT["relevant_property"]["name"]}
+
+Rewrite the email following the instruction. Keep the same HTML formatting style.
+Return ONLY a JSON object with exactly two keys: "subject" and "body".
+Do not include any explanation, preamble, or markdown code fences."""
+
+    response = client.chat.completions.create(
+        model=EMAIL_AGENT_MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.7,
+    )
+    raw = response.choices[0].message.content.strip()
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        clean = raw.replace("```json", "").replace("```", "").strip()
+        return json.loads(clean)
 
 def send_email(subject: str, body: str, recipient_email: str) -> str:
     message = Mail(

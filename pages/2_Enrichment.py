@@ -22,6 +22,10 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+# ── Auth Guard ─────────────────────────────────────────────────────────────────
+if not st.session_state.get("authentication_status"):
+    st.switch_page("app.py")
+
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap');
@@ -32,8 +36,7 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; background-colo
 .lp-logo span { color: #3B82F6; }
 .lp-tagline { font-family: 'DM Mono', monospace; font-size: 0.72rem; color: #475569; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 2.5rem; }
 .lp-divider { height: 1px; background: linear-gradient(90deg, #3B82F6 0%, #1E3A5F 40%, transparent 100%); margin: 1.5rem 0 2.5rem; }
-.section-label { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: #3B82F6; margin-bottom: 0.6rem; }
-
+.section-label { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: #3B82F6; margin-bottom: 0.6rem; font-weight: 600; }
 .stButton > button {
     background: #3B82F6 !important; color: #FFFFFF !important; border: none !important; border-radius: 8px !important;
     font-family: 'Syne', sans-serif !important; font-weight: 700 !important; font-size: 0.9rem !important;
@@ -58,18 +61,78 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; background-colo
 
 .detail-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.25rem; }
 .detail-item label { display: block; font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: #475569; margin-bottom: 0.3rem; }
-.detail-item p { margin: 0; font-size: 0.88rem; color: #CBD5E1; }
+.detail-item p { margin: 0; font-size: 0.88rem; color: #CBD5E1; font-weight: 600; }
 .rationale-block { background: #080C14; border-left: 3px solid #3B82F6; border-radius: 0 6px 6px 0; padding: 0.75rem 1rem; font-size: 0.83rem; color: #94A3B8; line-height: 1.6; margin-top: 0.75rem; }
 [data-testid="stSpinner"] { color: #3B82F6 !important; }
+
+.logout-btn button {
+    background: transparent !important; border: 1px solid #1E2D45 !important; color: #475569 !important;
+    font-size: 0.75rem !important; padding: 0.35rem 0.9rem !important; width: auto !important;
+    font-family: 'DM Mono', monospace !important; letter-spacing: 0.08em !important;
+}
+.logout-btn button:hover { border-color: #3B82F6 !important; color: #60A5FA !important; box-shadow: none !important; transform: none !important; }
+
+.startover-btn button {
+    background: transparent !important; border: 1px solid rgba(239,68,68,0.3) !important; color: #F87171 !important;
+    font-size: 0.75rem !important; padding: 0.35rem 0.9rem !important; width: auto !important;
+    font-family: 'DM Mono', monospace !important; letter-spacing: 0.08em !important;
+}
+.startover-btn button:hover { border-color: #EF4444 !important; color: #EF4444 !important; box-shadow: none !important; transform: none !important; }
+
 [data-testid="stSidebarNav"] { display: none; }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("""
-<div class="lp-logo">Lead<span>Pulse</span></div>
-<div class="lp-tagline">⚡ Step 2 of 3 &nbsp;·&nbsp; Enrichment</div>
-<div class="lp-divider"></div>
-""", unsafe_allow_html=True)
+# ── Start Over Confirmation Dialog ─────────────────────────────────────────────
+@st.dialog("Start Over?")
+def confirm_startover_dialog():
+    st.markdown(
+        '<p style="font-family:DM Sans,sans-serif;color:#94A3B8;font-size:0.9rem;margin-bottom:1.5rem">'
+        'This will clear all events, enrichment data, and generated emails. Are you sure?'
+        '</p>',
+        unsafe_allow_html=True,
+    )
+    col_yes, col_no = st.columns(2)
+    with col_yes:
+        if st.button("Yes, Start Over", key="confirm_yes"):
+            keys_to_clear = ["agent1_report", "enrichment_report", "generated_emails",
+                              "selected_event_ids", "agent1_city", "agent1_state", "confirm_startover"]
+            for k in keys_to_clear:
+                st.session_state.pop(k, None)
+            st.switch_page("pages/1_Event_Discovery.py")
+    with col_no:
+        if st.button("Cancel", key="confirm_no"):
+            st.session_state["confirm_startover"] = False
+            st.rerun()
+
+if st.session_state.get("confirm_startover"):
+    confirm_startover_dialog()
+
+# ── Header row ─────────────────────────────────────────────────────────────────
+col_header, col_startover, col_logout = st.columns([8, 1.2, 1])
+with col_header:
+    st.markdown("""
+    <div class="lp-logo">Lead<span>Pulse</span></div>
+    <div class="lp-tagline">Step 2 of 3 &nbsp;·&nbsp; Enrichment</div>
+    """, unsafe_allow_html=True)
+with col_startover:
+    st.markdown("<div style='height:0.6rem'></div>", unsafe_allow_html=True)
+    st.markdown('<div class="startover-btn">', unsafe_allow_html=True)
+    if st.button("Start Over", key="startover_btn"):
+        st.session_state["confirm_startover"] = True
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+with col_logout:
+    st.markdown("<div style='height:0.6rem'></div>", unsafe_allow_html=True)
+    st.markdown('<div class="logout-btn">', unsafe_allow_html=True)
+    if st.button("Logout", key="logout_btn"):
+        st.session_state["authentication_status"] = None
+        st.session_state["name"] = None
+        st.session_state["username"] = None
+        st.switch_page("app.py")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+st.markdown('<div class="lp-divider"></div>', unsafe_allow_html=True)
 
 # ── Guard: must have Agent 1 data ──────────────────────────────────────────────
 if "agent1_report" not in st.session_state or "selected_event_ids" not in st.session_state:
@@ -96,13 +159,7 @@ st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
 st.markdown(f'<div class="infobanner">⚡ {len(selected_events)} event(s) selected for enrichment</div>', unsafe_allow_html=True)
 
 # ── Run Enrichment ─────────────────────────────────────────────────────────────
-run_enrichment_btn = st.button(
-    f"Run Enrichment on {len(selected_events)} Event(s)",
-    key="run_enrichment",
-    disabled="enrichment_report" in st.session_state,
-)
-
-if run_enrichment_btn:
+if "enrichment_report" not in st.session_state:
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
     if project_root not in sys.path:
         sys.path.insert(0, project_root)
@@ -136,22 +193,74 @@ if "enrichment_report" in st.session_state:
         score_cls = "score-high" if e.hotel_lead_score >= 8 else "score-medium"
         elabel = f"{'🟢' if e.hotel_lead_score >= 8 else '🔵'} {e.event_name}  ·  Score {e.hotel_lead_score}/10  ·  Confidence: {e.confidence}"
         with st.expander(elabel, expanded=True):
+
+            # ── Meta row — dates, duration, attendance, origin, venue ──
+            meta_items = []
+            if e.event_start_date:
+                meta_items.append(f'<div class="detail-item"><label>Dates</label><p>{e.event_start_date} → {e.event_end_date}</p></div>')
+            if e.duration_days:
+                meta_items.append(f'<div class="detail-item"><label>Duration</label><p>{e.duration_days} day{"s" if e.duration_days > 1 else ""}</p></div>')
+            if e.expected_attendance:
+                meta_items.append(f'<div class="detail-item"><label>Expected Attendance</label><p>{e.expected_attendance}</p></div>')
+            if e.attendee_origin:
+                origin_color = {
+                    "international": "#F59E0B",
+                    "national":      "#34D399",
+                    "regional":      "#60A5FA",
+                    "local":         "#94A3B8"
+                }.get(e.attendee_origin, "#94A3B8")
+                meta_items.append(f'<div class="detail-item"><label>Attendee Origin</label><p style="color:{origin_color};text-transform:capitalize">{e.attendee_origin}</p></div>')
+            if e.venue_name:
+                meta_items.append(f'<div class="detail-item"><label>Venue</label><p>{e.venue_name}</p></div>')
+            if e.is_recurring is not None:
+                meta_items.append(f'<div class="detail-item"><label>Recurring</label><p>{"Yes — Annual" if e.is_recurring else "One-time"}</p></div>')
+
+            if meta_items:
+                st.markdown(
+                    f'<div class="detail-grid" style="margin-top:1rem;margin-bottom:0.5rem">{"".join(meta_items)}</div>',
+                    unsafe_allow_html=True
+                )
+
+            # ── Attendee origin reasoning ───────────────────────────────
+            if e.attendee_origin_reasoning:
+                st.markdown(
+                    f'<div style="font-family:DM Mono,monospace;font-size:0.72rem;color:#475569;margin-bottom:0.75rem">📍 {e.attendee_origin_reasoning}</div>',
+                    unsafe_allow_html=True
+                )
+
+            # ── Hotel lead reasoning ────────────────────────────────────
             st.markdown(f'<div class="rationale-block">💡 {e.hotel_lead_reasoning}</div>', unsafe_allow_html=True)
 
+            # ── Attending organizations ─────────────────────────────────
             if e.attending_organizations:
                 orgs = "".join([f'<span class="category-tag" style="margin:0.2rem">{o}</span>' for o in e.attending_organizations])
-                st.markdown(f'<div style="margin-top:1rem"><div class="section-label" style="margin-bottom:0.5rem">Attending Organizations</div><div style="display:flex;flex-wrap:wrap;gap:0.3rem">{orgs}</div></div>', unsafe_allow_html=True)
+                st.markdown(
+                    f'<div style="margin-top:1rem"><div class="section-label" style="margin-bottom:0.5rem">Attending Organizations</div><div style="display:flex;flex-wrap:wrap;gap:0.3rem">{orgs}</div></div>',
+                    unsafe_allow_html=True
+                )
 
+            # ── Target contact titles ───────────────────────────────────
             if e.target_contacts.job_titles:
                 titles = "".join([f'<span class="category-tag" style="margin:0.2rem;border-color:rgba(16,185,129,0.25);color:#34D399;background:rgba(16,185,129,0.08)">{t}</span>' for t in e.target_contacts.job_titles])
-                st.markdown(f'<div style="margin-top:1rem"><div class="section-label" style="margin-bottom:0.5rem">Target Contact Titles</div><div style="display:flex;flex-wrap:wrap;gap:0.3rem">{titles}</div></div>', unsafe_allow_html=True)
+                st.markdown(
+                    f'<div style="margin-top:1rem"><div class="section-label" style="margin-bottom:0.5rem">Target Contact Titles</div><div style="display:flex;flex-wrap:wrap;gap:0.3rem">{titles}</div></div>',
+                    unsafe_allow_html=True
+                )
 
+            # ── Key stakeholders ────────────────────────────────────────
             if e.stakeholders:
-                items = "".join([f'<div class="detail-item"><label>{s.type}</label><p>{s.name} — {s.role}</p></div>' for s in e.stakeholders])
-                st.markdown(f'<div style="margin-top:1rem"><div class="section-label" style="margin-bottom:0.5rem">Key Stakeholders</div><div class="detail-grid">{items}</div></div>', unsafe_allow_html=True)
+                items = "".join([f'<div class="detail-item"><label>{s.type}</label><p><strong>{s.name}</strong> — {s.role}</p></div>' for s in e.stakeholders])
+                st.markdown(
+                    f'<div style="margin-top:1rem"><div class="section-label" style="margin-bottom:0.5rem">Key Stakeholders</div><div class="detail-grid">{items}</div></div>',
+                    unsafe_allow_html=True
+                )
 
+            # ── Event website ───────────────────────────────────────────
             if e.event_website:
-                st.markdown(f'<div class="detail-item" style="margin-top:1rem"><label>Event Website</label><p><a href="{e.event_website}" target="_blank" style="color:#60A5FA">{e.event_website}</a></p></div>', unsafe_allow_html=True)
+                st.markdown(
+                    f'<div class="detail-item" style="margin-top:1rem"><label>Event Website</label><p><a href="{e.event_website}" target="_blank" style="color:#60A5FA">{e.event_website}</a></p></div>',
+                    unsafe_allow_html=True
+                )
 
     st.markdown("<div style='height:1.5rem'></div>", unsafe_allow_html=True)
     st.markdown('<div class="lp-divider"></div>', unsafe_allow_html=True)

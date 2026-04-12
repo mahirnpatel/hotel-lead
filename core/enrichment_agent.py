@@ -111,17 +111,31 @@ async def enrich_single_event(event: EventSummary, client: AsyncOpenAI, semaphor
         ]
 
         return EventEnrichment(
-            event_id=event.id,
-            event_name=raw.get("event_name", event.title),
-            event_website=raw.get("event_website"),
-            attending_organizations=raw.get("attending_organizations", []),
-            stakeholders=stakeholders,
-            professional_profile=ProfessionalProfile(**raw["professional_profile"]),
-            target_contacts=TargetContacts(**raw["target_contacts"]),
-            hotel_lead_reasoning=raw.get("hotel_lead_reasoning", ""),
-            hotel_lead_score=raw.get("hotel_lead_score", 1),
-            confidence=raw.get("confidence", "low")
-        )
+    event_id=event.id,
+    event_name=raw.get("event_name", event.title),
+    event_website=raw.get("event_website"),
+
+    # ── Passed directly from PredictHQ — no scraping needed ──
+    event_start_date=event.start,
+    event_end_date=event.end,
+    duration_days=event.duration_days,
+    venue_name=event.venue_name,
+    venue_address=event.venue_address,
+
+    # ── Scraped/inferred by LLM ───────────────────────────────
+    expected_attendance=str(raw["expected_attendance"]) if raw.get("expected_attendance") is not None else None,
+    attendee_origin=raw.get("attendee_origin", "national"),
+    attendee_origin_reasoning=raw.get("attendee_origin_reasoning", ""),
+    is_recurring=raw.get("is_recurring"),
+
+    attending_organizations=raw.get("attending_organizations", []),
+    stakeholders=stakeholders,
+    professional_profile=ProfessionalProfile(**raw["professional_profile"]),
+    target_contacts=TargetContacts(**raw["target_contacts"]),
+    hotel_lead_reasoning=raw.get("hotel_lead_reasoning", ""),
+    hotel_lead_score=raw.get("hotel_lead_score", 1),
+    confidence=raw.get("confidence", "low")
+)
 
 
 async def run_enrichment_agent(report: EventIntelligenceReport) -> EnrichmentReport:

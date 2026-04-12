@@ -5,8 +5,10 @@ appnope==0.1.4
 APScheduler==3.11.2
 asttokens==3.0.1
 attrs==26.1.0
+bcrypt==5.0.0
 blinker==1.9.0
 cachetools==6.2.6
+captcha==0.7.1
 certifi==2026.2.25
 cffi==2.0.0
 charset-normalizer==3.4.6
@@ -18,6 +20,7 @@ decorator==5.2.1
 deprecation==2.1.0
 distro==1.9.0
 executing==2.2.1
+extra-streamlit-components==0.1.81
 fsspec==2026.3.0
 gitdb==4.0.12
 GitPython==3.1.46
@@ -40,6 +43,7 @@ jsonschema==4.26.0
 jsonschema-specifications==2025.9.1
 jupyter_client==8.8.0
 jupyter_core==5.9.1
+Markdown==3.10.2
 markdown-it-py==4.0.0
 MarkupSafe==3.0.3
 matplotlib-inline==0.2.1
@@ -80,6 +84,7 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.2.2
 python-http-client==3.3.7
 python-multipart==0.0.22
+PyYAML==6.0.3
 pyzmq==27.1.0
 realtime==2.28.3
 referencing==0.37.0
@@ -95,6 +100,8 @@ stack-data==0.6.3
 starlette==1.0.0
 storage3==2.28.3
 streamlit==1.56.0
+streamlit-authenticator==0.4.2
+streamlit-searchbox==0.1.24
 StrEnum==0.4.15
 strictyaml==1.7.3
 supabase==2.28.3

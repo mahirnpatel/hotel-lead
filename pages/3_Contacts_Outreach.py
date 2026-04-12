@@ -9,6 +9,10 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+# ── Auth Guard ─────────────────────────────────────────────────────────────────
+if not st.session_state.get("authentication_status"):
+    st.switch_page("app.py")
+
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap');
@@ -45,17 +49,83 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; background-colo
 .email-preview-header { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; color: #475569; margin: 0.75rem 0 0.4rem; }
 .email-body-preview { background: #080C14; border: 1px solid #1E2D45; border-radius: 8px; padding: 1rem; font-size: 0.83rem; color: #94A3B8; line-height: 1.7; max-height: 300px; overflow-y: auto; }
 [data-testid="stSpinner"] { color: #3B82F6 !important; }
+
+.regen-btn button {
+    background: transparent !important; border: 1px solid rgba(59,130,246,0.4) !important; color: #60A5FA !important;
+    font-size: 0.72rem !important; padding: 0.28rem 0.75rem !important; width: auto !important;
+    font-family: 'DM Mono', monospace !important; letter-spacing: 0.06em !important; border-radius: 6px !important; font-weight: 500 !important;
+}
+.regen-btn button:hover { background: rgba(59,130,246,0.1) !important; border-color: #3B82F6 !important; color: #93C5FD !important; box-shadow: none !important; transform: none !important; }
+
+.logout-btn button {
+    background: transparent !important; border: 1px solid #1E2D45 !important; color: #475569 !important;
+    font-size: 0.75rem !important; padding: 0.35rem 0.9rem !important; width: auto !important;
+    font-family: 'DM Mono', monospace !important; letter-spacing: 0.08em !important;
+}
+.logout-btn button:hover { border-color: #3B82F6 !important; color: #60A5FA !important; box-shadow: none !important; transform: none !important; }
+
+.startover-btn button {
+    background: transparent !important; border: 1px solid rgba(239,68,68,0.3) !important; color: #F87171 !important;
+    font-size: 0.75rem !important; padding: 0.35rem 0.9rem !important; width: auto !important;
+    font-family: 'DM Mono', monospace !important; letter-spacing: 0.08em !important;
+}
+.startover-btn button:hover { border-color: #EF4444 !important; color: #EF4444 !important; box-shadow: none !important; transform: none !important; }
+
 [data-testid="stSidebarNav"] { display: none; }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("""
-<div class="lp-logo">Lead<span>Pulse</span></div>
-<div class="lp-tagline">⚡ Step 3 of 3 &nbsp;·&nbsp; Contacts & Outreach</div>
-<div class="lp-divider"></div>
-""", unsafe_allow_html=True)
+# ── Start Over Dialog ──────────────────────────────────────────────────────────
+@st.dialog("Start Over?")
+def confirm_startover_dialog():
+    st.markdown(
+        '<p style="font-family:DM Sans,sans-serif;color:#94A3B8;font-size:0.9rem;margin-bottom:1.5rem">'
+        'This will clear all events, enrichment data, and generated emails. Are you sure?'
+        '</p>', unsafe_allow_html=True,
+    )
+    col_yes, col_no = st.columns(2)
+    with col_yes:
+        if st.button("Yes, Start Over", key="confirm_yes"):
+            keys_to_clear = ["agent1_report", "enrichment_report", "generated_emails",
+                              "selected_event_ids", "agent1_city", "agent1_state", "confirm_startover"]
+            for k in keys_to_clear:
+                st.session_state.pop(k, None)
+            st.switch_page("pages/1_Event_Discovery.py")
+    with col_no:
+        if st.button("Cancel", key="confirm_no"):
+            st.session_state["confirm_startover"] = False
+            st.rerun()
 
-# ── Guard: must have enrichment data ──────────────────────────────────────────
+if st.session_state.get("confirm_startover"):
+    confirm_startover_dialog()
+
+# ── Header ─────────────────────────────────────────────────────────────────────
+col_header, col_startover, col_logout = st.columns([8, 1.2, 1])
+with col_header:
+    st.markdown("""
+    <div class="lp-logo">Lead<span>Pulse</span></div>
+    <div class="lp-tagline">Step 3 of 3 &nbsp;·&nbsp; Contacts & Outreach</div>
+    """, unsafe_allow_html=True)
+with col_startover:
+    st.markdown("<div style='height:0.6rem'></div>", unsafe_allow_html=True)
+    st.markdown('<div class="startover-btn">', unsafe_allow_html=True)
+    if st.button("Start Over", key="startover_btn"):
+        st.session_state["confirm_startover"] = True
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+with col_logout:
+    st.markdown("<div style='height:0.6rem'></div>", unsafe_allow_html=True)
+    st.markdown('<div class="logout-btn">', unsafe_allow_html=True)
+    if st.button("Logout", key="logout_btn"):
+        st.session_state["authentication_status"] = None
+        st.session_state["name"] = None
+        st.session_state["username"] = None
+        st.switch_page("app.py")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+st.markdown('<div class="lp-divider"></div>', unsafe_allow_html=True)
+
+# ── Guard ──────────────────────────────────────────────────────────────────────
 if "enrichment_report" not in st.session_state:
     st.warning("No enrichment data found. Please complete Step 2 first.")
     if st.button("← Back to Enrichment"):
@@ -90,7 +160,7 @@ if st.button("← Back to Enrichment", key="back_to_enrichment"):
 
 st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
 
-# ── Apollo Contact Discovery (Simulated) ───────────────────────────────────────
+# ── Apollo Contact Discovery (Simulated) ──────────────────────────────────────
 st.markdown('<div class="card-section-label">Apollo — Contact Discovery (Simulated)</div>', unsafe_allow_html=True)
 st.markdown('<div class="infobanner">Contacts below are simulated from Apollo.io based on attending organizations. Select who to reach out to.</div>', unsafe_allow_html=True)
 
@@ -119,7 +189,7 @@ for e in enrichment_report.enriched_events:
                     unsafe_allow_html=True,
                 )
 
-# Collect selected contacts per event
+# ── Collect selected contacts ──────────────────────────────────────────────────
 all_contacts_by_event = {}
 for e in enrichment_report.enriched_events:
     orgs_to_show = e.attending_organizations[:5]
@@ -167,15 +237,16 @@ if gen_btn:
                     "subject": email_data["subject"],
                     "body":    email_data["body"],
                     "status":  None,
+                    "version": 0,
                 })
     st.session_state["generated_emails"] = generated
 
-# ── Email Preview + Edit + Send ────────────────────────────────────────────────
+# ── Email Preview + Regenerate + Send ─────────────────────────────────────────
 if "generated_emails" in st.session_state:
     generated = st.session_state["generated_emails"]
 
-    st.markdown('<div class="card-section-label">Email Preview — Review & Edit Before Sending</div>', unsafe_allow_html=True)
-    st.markdown('<div class="infobanner">Review each email. Edit subject or body if needed, then send.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="card-section-label">Email Preview — Review, Edit & Send</div>', unsafe_allow_html=True)
+    st.markdown('<div class="infobanner">Review each email. Add an instruction and hit ↺ Regenerate to rewrite, or edit manually. Send when ready.</div>', unsafe_allow_html=True)
 
     updated_generated = {}
     for event_id, email_list in generated.items():
@@ -186,26 +257,67 @@ if "generated_emails" in st.session_state:
 
         for idx, item in enumerate(email_list):
             contact = item["contact"]
+            version = item.get("version", 0)
+
             with st.expander(f"✉️  {contact['name']}  ·  {contact['company']}  ·  {contact['email']}", expanded=True):
+
+                # ── Subject row ────────────────────────────────────────────────
                 new_subject = st.text_input(
                     "Subject",
                     value=item["subject"],
-                    key=f"subj_{event_id}_{idx}",
+                    key=f"subj_{event_id}_{idx}_v{version}",
                 )
+
+                # ── Body ───────────────────────────────────────────────────────
                 new_body = st.text_area(
                     "Body (HTML)",
                     value=item["body"],
                     height=280,
-                    key=f"body_{event_id}_{idx}",
+                    key=f"body_{event_id}_{idx}_v{version}",
                 )
+
+                # ── Live preview ───────────────────────────────────────────────
                 st.markdown('<div class="email-preview-header">Live Preview</div>', unsafe_allow_html=True)
                 st.markdown(f'<div class="email-body-preview">{new_body}</div>', unsafe_allow_html=True)
+
+                # ── Regenerate section ─────────────────────────────────────────
+                st.markdown('<div style="height:0.75rem"></div>', unsafe_allow_html=True)
+                st.markdown('<div style="height:1px;background:#1E2D45;margin-bottom:0.75rem"></div>', unsafe_allow_html=True)
+                st.markdown('<div class="section-label" style="margin-bottom:0.4rem">Regenerate with Instruction</div>', unsafe_allow_html=True)
+
+                col_instr, col_regen = st.columns([8, 1.5])
+                with col_instr:
+                    instruction = st.text_input(
+                        "Instruction",
+                        placeholder='e.g. "Make it shorter" or "Use a more formal tone"',
+                        key=f"instr_{event_id}_{idx}_v{version}",
+                        label_visibility="collapsed",
+                    )
+                with col_regen:
+                    st.markdown('<div class="regen-btn">', unsafe_allow_html=True)
+                    if st.button("↺ Regenerate", key=f"regen_{event_id}_{idx}_v{version}"):
+                        from core.email_agent import refine_email
+                        with st.spinner("Regenerating…"):
+                            refined = refine_email(
+                                original_subject=item["subject"],
+                                original_body=item["body"],
+                                instruction=instruction or "Improve the email.",
+                                event=matching_event,
+                                recipient_name=contact["name"],
+                                company=contact["company"],
+                            )
+                        st.session_state["generated_emails"][event_id][idx]["subject"] = refined["subject"]
+                        st.session_state["generated_emails"][event_id][idx]["body"]    = refined["body"]
+                        st.session_state["generated_emails"][event_id][idx]["version"] = version + 1
+                        st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
 
                 updated_generated[event_id].append({
                     "contact": contact,
                     "subject": new_subject,
                     "body":    new_body,
                     "status":  item.get("status"),
+                    "version": version,
                 })
 
     st.session_state["generated_emails"] = updated_generated
@@ -241,3 +353,11 @@ if "generated_emails" in st.session_state:
                     f'{icon} **{item["contact"]["name"]}** · {item["contact"]["company"]} · '
                     f'`{item["contact"]["email"]}` · _{item["subject"]}_'
                 )
+                
+        # ── Next Step ──────────────────────────────────────────────────────────────
+st.markdown("<div style='height:1.5rem'></div>", unsafe_allow_html=True)
+st.markdown('<div class="lp-divider"></div>', unsafe_allow_html=True)
+st.markdown('<div class="successbanner">✅ Outreach complete — generate SEO blog posts for your events.</div>', unsafe_allow_html=True)
+
+if st.button("Next → Generate Blog Content", key="go_blog"):
+    st.switch_page("pages/4_Blog_Content.py")
