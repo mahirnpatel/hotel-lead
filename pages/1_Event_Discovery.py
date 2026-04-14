@@ -181,28 +181,40 @@ if st.session_state.get("confirm_startover"):
     confirm_startover_dialog()
 
 # ── Header ─────────────────────────────────────────────────────────────────────
-col_header, col_startover, col_logout = st.columns([8, 1.2, 1])
+col_header, col_buttons = st.columns([7, 3])
 with col_header:
     st.markdown("""
     <div class="lp-logo">Lead<span>Pulse</span></div>
     <div class="lp-tagline">Step 1 of 3 &nbsp;·&nbsp; Event Discovery</div>
     """, unsafe_allow_html=True)
-with col_startover:
+with col_buttons:
     st.markdown("<div style='height:0.6rem'></div>", unsafe_allow_html=True)
-    st.markdown('<div class="startover-btn">', unsafe_allow_html=True)
-    if st.button("Start Over", key="startover_btn"):
-        st.session_state["confirm_startover"] = True
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-with col_logout:
-    st.markdown("<div style='height:0.6rem'></div>", unsafe_allow_html=True)
-    st.markdown('<div class="logout-btn">', unsafe_allow_html=True)
-    if st.button("Logout", key="logout_btn"):
-        st.session_state["authentication_status"] = None
-        st.session_state["name"] = None
-        st.session_state["username"] = None
-        st.switch_page("app.py")
-    st.markdown('</div>', unsafe_allow_html=True)
+    if st.session_state.get("agent1_report") is not None:
+        btn_cols = st.columns([1, 1])
+        with btn_cols[0]:
+            st.markdown('<div class="startover-btn">', unsafe_allow_html=True)
+            if st.button("Start Over", key="startover_btn"):
+                st.session_state["confirm_startover"] = True
+                st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
+        with btn_cols[1]:
+            st.markdown('<div class="logout-btn">', unsafe_allow_html=True)
+            if st.button("Logout", key="logout_btn"):
+                st.session_state["authentication_status"] = None
+                st.session_state["name"] = None
+                st.session_state["username"] = None
+                st.switch_page("app.py")
+            st.markdown('</div>', unsafe_allow_html=True)
+    else:
+        btn_cols = st.columns([1])
+        with btn_cols[0]:
+            st.markdown('<div class="logout-btn">', unsafe_allow_html=True)
+            if st.button("Logout", key="logout_btn"):
+                st.session_state["authentication_status"] = None
+                st.session_state["name"] = None
+                st.session_state["username"] = None
+                st.switch_page("app.py")
+            st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="lp-divider"></div>', unsafe_allow_html=True)
 
@@ -289,7 +301,7 @@ if "agent1_report" in st.session_state:
 
 
     # ── Rows with expandable details ───────────────────────────────────────────
-    for ev in events:
+    for i, ev in enumerate(events):
         is_queued = ev.id in queued_ids
         border_color = "rgba(16,185,129,0.25)" if is_queued else "#1E2D45"
         bg_color     = "rgba(16,185,129,0.03)" if is_queued else "#0A1628"
@@ -327,7 +339,7 @@ if "agent1_report" in st.session_state:
             with row_cols[5]:
                 if is_queued:
                     st.markdown('<div class="queued-btn">', unsafe_allow_html=True)
-                    if st.button("Selected", key=f"queue_{ev.id}"):
+                    if st.button("Select", key=f"queue_{i}_{ev.id}"):
                         queued_ids.discard(ev.id)
                         st.session_state["queued_event_ids"] = queued_ids
                         st.rerun()

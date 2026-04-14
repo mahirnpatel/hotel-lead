@@ -42,6 +42,7 @@ B2B_LABELS = {
     "agriculture-forestry-and-fisheries",
     "consumer-goods",
     "design-and-furnishing",
+    "sports-and-gaming",
 }
 
 EXCLUDE_LABELS = {
@@ -52,7 +53,6 @@ EXCLUDE_LABELS = {
     "music-and-dance",
     "food-and-beverage",
     "beauty-and-fashion",
-    "sports-and-gaming",
     "religion-and-spirituality",
     "education-and-careers",
 }
