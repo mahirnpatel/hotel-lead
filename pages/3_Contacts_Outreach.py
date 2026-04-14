@@ -1,6 +1,7 @@
 import streamlit as st
 import sys
 import os
+from streamlit_quill import st_quill
 
 st.set_page_config(
     page_title="LeadPulse — Contacts & Outreach",
@@ -19,26 +20,37 @@ st.markdown("""
 
 html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; background-color: #080C14; color: #E2E8F0; }
 .main .block-container { padding: 2rem 3rem 4rem; max-width: 1280px; }
+
 .lp-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 2rem; color: #FFFFFF; letter-spacing: -0.04em; }
 .lp-logo span { color: #3B82F6; }
-.lp-tagline { font-family: 'DM Mono', monospace; font-size: 0.72rem; color: #475569; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 2.5rem; }
-.lp-divider { height: 1px; background: linear-gradient(90deg, #3B82F6 0%, #1E3A5F 40%, transparent 100%); margin: 1.5rem 0 2.5rem; }
+.lp-tagline { font-family: 'DM Mono', monospace; font-size: 0.72rem; color: #475569; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 0; }
+.lp-divider { height: 1px; background: linear-gradient(90deg, #3B82F6 0%, #1E3A5F 40%, transparent 100%); margin: 1.5rem 0 2rem; }
 .section-label { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: #3B82F6; margin-bottom: 0.6rem; }
+
+[data-testid="stTextInput"] input {
+    background: #111927 !important; border: 1px solid #1E2D45 !important; border-radius: 8px !important;
+    color: #E2E8F0 !important; font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.9rem !important; padding: 0.6rem 0.9rem !important; height: 42px !important;
+}
+[data-testid="stTextInput"] input:focus { border-color: #3B82F6 !important; box-shadow: 0 0 0 2px rgba(59,130,246,0.15) !important; }
+[data-testid="stTextInput"] label { color: #94A3B8 !important; font-size: 0.72rem !important; font-family: 'DM Mono', monospace !important; letter-spacing: 0.08em !important; text-transform: uppercase !important; margin-bottom: 0.3rem !important; }
 
 .stButton > button {
     background: #3B82F6 !important; color: #FFFFFF !important; border: none !important; border-radius: 8px !important;
     font-family: 'Syne', sans-serif !important; font-weight: 700 !important; font-size: 0.9rem !important;
-    letter-spacing: 0.05em !important; padding: 0.65rem 2rem !important; transition: all 0.2s ease !important; width: 100% !important;
+    letter-spacing: 0.05em !important; padding: 0.65rem 2rem !important;
+    transition: all 0.2s ease !important; width: 100% !important; height: 42px !important;
 }
 .stButton > button:hover { background: #2563EB !important; box-shadow: 0 0 20px rgba(59,130,246,0.35) !important; transform: translateY(-1px) !important; }
 .stButton > button:disabled { background: #1E2D45 !important; color: #475569 !important; }
 
-.dfwwarning { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.3); border-radius: 8px; padding: 0.75rem 1rem; color: #FCD34D; font-size: 0.82rem; font-family: 'DM Mono', monospace; margin-bottom: 1.5rem; }
 .infobanner { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.25); border-radius: 8px; padding: 0.75rem 1rem; color: #60A5FA; font-size: 0.82rem; font-family: 'DM Mono', monospace; margin-bottom: 1.5rem; }
 .successbanner { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); border-radius: 8px; padding: 0.75rem 1rem; color: #34D399; font-size: 0.82rem; font-family: 'DM Mono', monospace; margin-bottom: 1.5rem; }
+.warningbanner { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.3); border-radius: 8px; padding: 0.75rem 1rem; color: #FCD34D; font-size: 0.82rem; font-family: 'DM Mono', monospace; margin-bottom: 1.5rem; }
 
 .category-tag { display: inline-block; padding: 0.15rem 0.5rem; background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.18); border-radius: 4px; font-size: 0.72rem; color: #93C5FD; font-family: 'DM Mono', monospace; }
 .card-section-label { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: #3B82F6; margin: 2rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #1E2D45; }
+
 [data-testid="stExpander"] { background: #0D1520 !important; border: 1px solid #1E2D45 !important; border-radius: 10px !important; margin-bottom: 0.75rem !important; }
 [data-testid="stExpander"] summary { padding: 1rem 1.25rem !important; font-family: 'DM Sans', sans-serif !important; font-size: 0.9rem !important; color: #E2E8F0 !important; }
 [data-testid="stExpander"]:hover { border-color: #3B82F6 !important; }
@@ -46,31 +58,29 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; background-colo
 .org-header { font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 700; color: #E2E8F0; padding: 0.75rem 0 0.5rem; border-bottom: 1px solid #1E2D45; margin-bottom: 0.75rem; }
 .contact-name { font-size: 0.88rem; color: #E2E8F0; font-weight: 500; }
 .contact-meta { font-size: 0.75rem; color: #475569; font-family: 'DM Mono', monospace; }
-.email-preview-header { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; color: #475569; margin: 0.75rem 0 0.4rem; }
-.email-body-preview { background: #080C14; border: 1px solid #1E2D45; border-radius: 8px; padding: 1rem; font-size: 0.83rem; color: #94A3B8; line-height: 1.7; max-height: 300px; overflow-y: auto; }
-[data-testid="stSpinner"] { color: #3B82F6 !important; }
 
-.regen-btn button {
-    background: transparent !important; border: 1px solid rgba(59,130,246,0.4) !important; color: #60A5FA !important;
-    font-size: 0.72rem !important; padding: 0.28rem 0.75rem !important; width: auto !important;
-    font-family: 'DM Mono', monospace !important; letter-spacing: 0.06em !important; border-radius: 6px !important; font-weight: 500 !important;
-}
-.regen-btn button:hover { background: rgba(59,130,246,0.1) !important; border-color: #3B82F6 !important; color: #93C5FD !important; box-shadow: none !important; transform: none !important; }
+.ql-toolbar { background: #111927 !important; border: 1px solid #1E2D45 !important; border-radius: 8px 8px 0 0 !important; }
+.ql-container { background: #111927 !important; border: 1px solid #1E2D45 !important; border-top: none !important; border-radius: 0 0 8px 8px !important; color: #E2E8F0 !important; font-family: 'DM Sans', sans-serif !important; font-size: 0.88rem !important; min-height: 200px !important; }
+.ql-editor { color: #E2E8F0 !important; }
+.ql-stroke { stroke: #94A3B8 !important; }
+.ql-fill { fill: #94A3B8 !important; }
+.ql-picker-label { color: #94A3B8 !important; }
 
 .logout-btn button {
     background: transparent !important; border: 1px solid #1E2D45 !important; color: #475569 !important;
     font-size: 0.75rem !important; padding: 0.35rem 0.9rem !important; width: auto !important;
-    font-family: 'DM Mono', monospace !important; letter-spacing: 0.08em !important;
+    font-family: 'DM Mono', monospace !important; letter-spacing: 0.08em !important; height: auto !important;
 }
 .logout-btn button:hover { border-color: #3B82F6 !important; color: #60A5FA !important; box-shadow: none !important; transform: none !important; }
 
 .startover-btn button {
     background: transparent !important; border: 1px solid rgba(239,68,68,0.3) !important; color: #F87171 !important;
     font-size: 0.75rem !important; padding: 0.35rem 0.9rem !important; width: auto !important;
-    font-family: 'DM Mono', monospace !important; letter-spacing: 0.08em !important;
+    font-family: 'DM Mono', monospace !important; letter-spacing: 0.08em !important; height: auto !important;
 }
 .startover-btn button:hover { border-color: #EF4444 !important; color: #EF4444 !important; box-shadow: none !important; transform: none !important; }
 
+[data-testid="stSpinner"] { color: #3B82F6 !important; }
 [data-testid="stSidebarNav"] { display: none; }
 </style>
 """, unsafe_allow_html=True)
@@ -86,9 +96,8 @@ def confirm_startover_dialog():
     col_yes, col_no = st.columns(2)
     with col_yes:
         if st.button("Yes, Start Over", key="confirm_yes"):
-            keys_to_clear = ["agent1_report", "enrichment_report", "generated_emails",
-                              "selected_event_ids", "agent1_city", "agent1_state", "confirm_startover"]
-            for k in keys_to_clear:
+            for k in ["agent1_report", "enrichment_report", "generated_emails",
+                      "selected_event_ids", "agent1_city", "agent1_state", "confirm_startover"]:
                 st.session_state.pop(k, None)
             st.switch_page("pages/1_Event_Discovery.py")
     with col_no:
@@ -100,35 +109,36 @@ if st.session_state.get("confirm_startover"):
     confirm_startover_dialog()
 
 # ── Header ─────────────────────────────────────────────────────────────────────
-col_header, col_startover, col_logout = st.columns([8, 1.2, 1])
+col_header, col_btns = st.columns([7, 3])
 with col_header:
     st.markdown("""
     <div class="lp-logo">Lead<span>Pulse</span></div>
     <div class="lp-tagline">Step 3 of 3 &nbsp;·&nbsp; Contacts & Outreach</div>
     """, unsafe_allow_html=True)
-with col_startover:
-    st.markdown("<div style='height:0.6rem'></div>", unsafe_allow_html=True)
-    st.markdown('<div class="startover-btn">', unsafe_allow_html=True)
-    if st.button("Start Over", key="startover_btn"):
-        st.session_state["confirm_startover"] = True
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-with col_logout:
-    st.markdown("<div style='height:0.6rem'></div>", unsafe_allow_html=True)
-    st.markdown('<div class="logout-btn">', unsafe_allow_html=True)
-    if st.button("Logout", key="logout_btn"):
-        st.session_state["authentication_status"] = None
-        st.session_state["name"] = None
-        st.session_state["username"] = None
-        st.switch_page("app.py")
-    st.markdown('</div>', unsafe_allow_html=True)
+with col_btns:
+    st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
+    b1, b2 = st.columns(2)
+    with b1:
+        st.markdown('<div class="startover-btn">', unsafe_allow_html=True)
+        if st.button("Start Over", key="startover_btn"):
+            st.session_state["confirm_startover"] = True
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+    with b2:
+        st.markdown('<div class="logout-btn">', unsafe_allow_html=True)
+        if st.button("Logout", key="logout_btn"):
+            st.session_state["authentication_status"] = None
+            st.session_state["name"] = None
+            st.session_state["username"] = None
+            st.switch_page("app.py")
+        st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="lp-divider"></div>', unsafe_allow_html=True)
 
 # ── Guard ──────────────────────────────────────────────────────────────────────
 if "enrichment_report" not in st.session_state:
     st.warning("No enrichment data found. Please complete Step 2 first.")
-    if st.button("← Back to Enrichment"):
+    if st.button("Back to Enrichment"):
         st.switch_page("pages/2_Enrichment.py")
     st.stop()
 
@@ -154,9 +164,17 @@ def build_mock_contacts(org: str, job_titles: list, org_index: int) -> list:
         contacts.append({"name": mock["name"], "email": mock["email"], "company": org, "title": title})
     return contacts
 
-# ── Back button ────────────────────────────────────────────────────────────────
-if st.button("← Back to Enrichment", key="back_to_enrichment"):
-    st.switch_page("pages/2_Enrichment.py")
+# ── Back buttons ───────────────────────────────────────────────────────────────
+col_back1, col_spacer, col_back2 = st.columns([1.5, 5, 1.5])
+with col_back1:
+    if st.button("Back to Enrichment", key="back_to_enrichment"):
+        st.switch_page("pages/2_Enrichment.py")
+with col_back2:
+    if st.button("Back to Events List", key="back_to_discovery_top"):
+        st.session_state.pop("enrichment_report", None)
+        st.session_state.pop("generated_emails", None)
+        st.session_state.pop("generated_blog", None)
+        st.switch_page("pages/1_Event_Discovery.py")
 
 st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
 
@@ -165,12 +183,16 @@ st.markdown('<div class="card-section-label">Apollo — Contact Discovery (Simul
 st.markdown('<div class="infobanner">Contacts below are simulated from Apollo.io based on attending organizations. Select who to reach out to.</div>', unsafe_allow_html=True)
 
 for e in enrichment_report.enriched_events:
-    st.markdown(f'<div class="org-header" style="color:#3B82F6;font-size:1rem;margin-bottom:1rem">📋 {e.event_name}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="org-header" style="color:#3B82F6;font-size:1rem;margin-bottom:1rem">{e.event_name}</div>', unsafe_allow_html=True)
     orgs_to_show = e.attending_organizations[:5]
     job_titles   = e.target_contacts.job_titles
 
+    if not orgs_to_show:
+        st.markdown('<div class="warningbanner">No attending organizations found for this event — try re-enriching.</div>', unsafe_allow_html=True)
+        continue
+
     for org_idx, org in enumerate(orgs_to_show):
-        st.markdown(f'<div class="org-header">🏢 {org}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="org-header">{org}</div>', unsafe_allow_html=True)
         contacts = build_mock_contacts(org, job_titles, org_idx)
         for contact in contacts:
             ck = f"contact_{e.event_id}_{org_idx}_{contact['email']}"
@@ -179,7 +201,8 @@ for e in enrichment_report.enriched_events:
                 st.checkbox("Select contact", key=ck, value=False, label_visibility="collapsed")
             with col_info:
                 st.markdown(
-                    f'<div style="padding:0.5rem 0.75rem;background:#080C14;border:1px solid #111927;border-radius:8px;margin-bottom:0.4rem;display:flex;justify-content:space-between;align-items:center">'
+                    f'<div style="padding:0.5rem 0.75rem;background:#080C14;border:1px solid #111927;'
+                    f'border-radius:8px;margin-bottom:0.4rem;display:flex;justify-content:space-between;align-items:center">'
                     f'<div>'
                     f'<div class="contact-name">{contact["name"]}</div>'
                     f'<div class="contact-meta">{contact["title"]} &nbsp;·&nbsp; {contact["email"]}</div>'
@@ -212,9 +235,9 @@ st.markdown('<div class="lp-divider"></div>', unsafe_allow_html=True)
 st.markdown('<div class="section-label">Email Generation</div>', unsafe_allow_html=True)
 
 if total_selected > 0:
-    st.markdown(f'<div class="infobanner">⚡ {total_selected} contact(s) selected across {len(all_contacts_by_event)} event(s)</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="infobanner">{total_selected} contact(s) selected across {len(all_contacts_by_event)} event(s)</div>', unsafe_allow_html=True)
 else:
-    st.markdown('<div class="dfwwarning">No contacts selected — check at least one contact above to generate emails.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="warningbanner">No contacts selected — check at least one contact above to generate emails.</div>', unsafe_allow_html=True)
 
 gen_btn = st.button(
     f"Generate Emails for {total_selected} Contact(s)",
@@ -241,90 +264,84 @@ if gen_btn:
                 })
     st.session_state["generated_emails"] = generated
 
-# ── Email Preview + Regenerate + Send ─────────────────────────────────────────
+# ── Email Preview + Rich Text Edit + Regenerate + Send ────────────────────────
 if "generated_emails" in st.session_state:
     generated = st.session_state["generated_emails"]
 
     st.markdown('<div class="card-section-label">Email Preview — Review, Edit & Send</div>', unsafe_allow_html=True)
-    st.markdown('<div class="infobanner">Review each email. Add an instruction and hit ↺ Regenerate to rewrite, or edit manually. Send when ready.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="infobanner">Edit the subject and body directly. Use the toolbar to format text. Add an instruction and hit Regenerate to rewrite with AI.</div>', unsafe_allow_html=True)
 
     updated_generated = {}
     for event_id, email_list in generated.items():
         matching_event = next((e for e in enrichment_report.enriched_events if e.event_id == event_id), None)
         event_name = matching_event.event_name if matching_event else event_id
-        st.markdown(f'<div class="org-header" style="color:#3B82F6;font-size:1rem;margin-bottom:1rem">📋 {event_name}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="org-header" style="color:#3B82F6;font-size:1rem;margin-bottom:1rem">{event_name}</div>', unsafe_allow_html=True)
         updated_generated[event_id] = []
 
         for idx, item in enumerate(email_list):
             contact = item["contact"]
             version = item.get("version", 0)
 
-            with st.expander(f"✉️  {contact['name']}  ·  {contact['company']}  ·  {contact['email']}", expanded=True):
+            with st.expander(f"{contact['name']}  ·  {contact['company']}  ·  {contact['email']}", expanded=True):
 
-                # ── Subject row ────────────────────────────────────────────────
                 new_subject = st.text_input(
                     "Subject",
                     value=item["subject"],
                     key=f"subj_{event_id}_{idx}_v{version}",
                 )
 
-                # ── Body ───────────────────────────────────────────────────────
-                new_body = st.text_area(
-                    "Body (HTML)",
+                st.markdown('<div class="section-label" style="margin-top:0.75rem;margin-bottom:0.4rem">Email Body</div>', unsafe_allow_html=True)
+                new_body = st_quill(
                     value=item["body"],
-                    height=280,
+                    html=True,
                     key=f"body_{event_id}_{idx}_v{version}",
+                    toolbar=[
+                        ["bold", "italic", "underline"],
+                        [{"list": "ordered"}, {"list": "bullet"}],
+                        ["link"],
+                        ["clean"],
+                    ],
                 )
 
-                # ── Live preview ───────────────────────────────────────────────
-                st.markdown('<div class="email-preview-header">Live Preview</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="email-body-preview">{new_body}</div>', unsafe_allow_html=True)
-
-                # ── Regenerate section ─────────────────────────────────────────
                 st.markdown('<div style="height:0.75rem"></div>', unsafe_allow_html=True)
                 st.markdown('<div style="height:1px;background:#1E2D45;margin-bottom:0.75rem"></div>', unsafe_allow_html=True)
                 st.markdown('<div class="section-label" style="margin-bottom:0.4rem">Regenerate with Instruction</div>', unsafe_allow_html=True)
 
-                col_instr, col_regen = st.columns([8, 1.5])
-                with col_instr:
-                    instruction = st.text_input(
-                        "Instruction",
-                        placeholder='e.g. "Make it shorter" or "Use a more formal tone"',
-                        key=f"instr_{event_id}_{idx}_v{version}",
-                        label_visibility="collapsed",
-                    )
-                with col_regen:
-                    st.markdown('<div class="regen-btn">', unsafe_allow_html=True)
-                    if st.button("Regenerate", key=f"regen_{event_id}_{idx}_v{version}"):
-                        from core.email_agent import refine_email
-                        with st.spinner("Regenerating…"):
-                            refined = refine_email(
-                                original_subject=item["subject"],
-                                original_body=item["body"],
-                                instruction=instruction or "Improve the email.",
-                                event=matching_event,
-                                recipient_name=contact["name"],
-                                company=contact["company"],
-                            )
-                        st.session_state["generated_emails"][event_id][idx]["subject"] = refined["subject"]
-                        st.session_state["generated_emails"][event_id][idx]["body"]    = refined["body"]
-                        st.session_state["generated_emails"][event_id][idx]["version"] = version + 1
-                        st.rerun()
-                    st.markdown('</div>', unsafe_allow_html=True)
+                instruction = st.text_input(
+                    "Instruction",
+                    placeholder='e.g. "Make it shorter" or "Use a more formal tone"',
+                    key=f"instr_{event_id}_{idx}_v{version}",
+                    label_visibility="collapsed",
+                )
+                if st.button("Regenerate", key=f"regen_{event_id}_{idx}_v{version}"):
+                    from core.email_agent import refine_email
+                    with st.spinner("Regenerating…"):
+                        refined = refine_email(
+                            original_subject=item["subject"],
+                            original_body=item["body"],
+                            instruction=instruction or "Improve the email.",
+                            event=matching_event,
+                            recipient_name=contact["name"],
+                            company=contact["company"],
+                        )
+                    st.session_state["generated_emails"][event_id][idx]["subject"] = refined["subject"]
+                    st.session_state["generated_emails"][event_id][idx]["body"]    = refined["body"]
+                    st.session_state["generated_emails"][event_id][idx]["version"] = version + 1
+                    st.rerun()
 
                 updated_generated[event_id].append({
-                    "contact": contact,
-                    "subject": new_subject,
-                    "body":    new_body,
-                    "status":  item.get("status"),
-                    "version": version,
+                    "contact":  contact,
+                    "subject":  new_subject,
+                    "body":     new_body or item["body"],
+                    "status":   item.get("status"),
+                    "version":  version,
                 })
 
     st.session_state["generated_emails"] = updated_generated
 
     # ── Send ──────────────────────────────────────────────────────────────────
     st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
-    send_btn = st.button("🚀 Send All Emails", key="send_emails")
+    send_btn = st.button("Send All Emails", key="send_emails")
 
     if send_btn:
         from core.email_agent import send_email
@@ -341,23 +358,42 @@ if "generated_emails" in st.session_state:
                         failed_count += 1
 
         if sent_count:
-            st.markdown(f'<div class="successbanner">✅ {sent_count} email(s) sent successfully.</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="successbanner">{sent_count} email(s) sent successfully.</div>', unsafe_allow_html=True)
         if failed_count:
-            st.markdown(f'<div class="dfwwarning">⚠️ {failed_count} email(s) failed — check SendGrid logs.</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="warningbanner">{failed_count} email(s) failed — check SendGrid logs.</div>', unsafe_allow_html=True)
 
         st.markdown('<div class="card-section-label">Outreach Log</div>', unsafe_allow_html=True)
         for event_id, email_list in st.session_state["generated_emails"].items():
             for item in email_list:
-                icon = "✅" if item["status"] == "sent" else "❌"
+                icon = "Sent" if item["status"] == "sent" else "Failed"
                 st.markdown(
-                    f'{icon} **{item["contact"]["name"]}** · {item["contact"]["company"]} · '
+                    f'**{icon}** — **{item["contact"]["name"]}** · {item["contact"]["company"]} · '
                     f'`{item["contact"]["email"]}` · _{item["subject"]}_'
                 )
-                
-        # ── Next Step ──────────────────────────────────────────────────────────────
+
+# ── Bottom navigation ──────────────────────────────────────────────────────────
 st.markdown("<div style='height:1.5rem'></div>", unsafe_allow_html=True)
 st.markdown('<div class="lp-divider"></div>', unsafe_allow_html=True)
-st.markdown('<div class="successbanner">✅ Outreach complete — generate SEO blog posts for your events.</div>', unsafe_allow_html=True)
 
-if st.button("Next → Generate Blog Content", key="go_blog"):
+if st.button("Next — Generate Blog Content", key="go_blog"):
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+    if project_root not in sys.path:
+        sys.path.insert(0, project_root)
+
+    from core.content_agent import generate_blog_post
+    enrichment_report = st.session_state["enrichment_report"]
+    selected_event = enrichment_report.enriched_events[0]
+
+    with st.spinner(f"Generating blog post for {selected_event.event_name}…"):
+        try:
+            blog = generate_blog_post(
+                event=selected_event,
+                city=enrichment_report.city,
+                state=enrichment_report.state,
+            )
+            st.session_state["generated_blog"] = blog
+        except Exception as e:
+            st.error(f"Blog generation failed: {e}")
+            st.stop()
+
     st.switch_page("pages/4_Blog_Content.py")
