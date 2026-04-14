@@ -295,7 +295,7 @@ if "generated_emails" in st.session_state:
                     )
                 with col_regen:
                     st.markdown('<div class="regen-btn">', unsafe_allow_html=True)
-                    if st.button("↺ Regenerate", key=f"regen_{event_id}_{idx}_v{version}"):
+                    if st.button("Regenerate", key=f"regen_{event_id}_{idx}_v{version}"):
                         from core.email_agent import refine_email
                         with st.spinner("Regenerating…"):
                             refined = refine_email(
